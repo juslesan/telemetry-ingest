@@ -17,8 +17,10 @@ services:
     working_dir: /app/load-generator
     command: sh -c "bun install && bun run src/index.ts"
     depends_on:
-      - ingest-api
-      - ingest-proxy
+      ingest-api:
+        condition: service_started
+      ingest-proxy:
+        condition: service_healthy
     environment:
       - INGEST_URL=http://ingest-proxy:4000/event
     volumes:
@@ -32,7 +34,8 @@ services:
     ports:
       - "4000:4000"
     depends_on:
-      - redpanda
+      redpanda:
+        condition: service_healthy
     environment:
       - PORT=4000
       - KAFKA_BROKERS=redpanda:9092
@@ -40,14 +43,22 @@ services:
     volumes:
       - ./ingest-proxy:/app/ingest-proxy
       - ingest-proxy-node-modules:/app/ingest-proxy/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:4000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   stream-processor:
     image: oven/bun:latest
     working_dir: /app/stream-processor
     command: sh -c "bun install && bun run index.ts"
     depends_on:
-      - redpanda
-      - ingest-api
+      redpanda:
+        condition: service_healthy
+      ingest-api:
+        condition: service_started
     environment:
       - KAFKA_BROKERS=redpanda:9092
       - KAFKA_TOPIC=telemetry-events
@@ -84,6 +95,12 @@ services:
       - "18082:18082"
     volumes:
       - redpanda-data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/brokers"]
+      interval: 30s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
 
 volumes:
   ingest-node-modules:

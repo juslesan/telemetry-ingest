@@ -2,18 +2,27 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { PublishingKafkaClient } from './PublishingKafkaClient'
 
+const TelemetryEventSchema = z.object({
+  deviceId: z.string().min(1),
+  ts: z.number().int().nonnegative(), // epoch ms
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180)
+});
+
+const app = new Hono()
+let kafkaReady = false
 
 const main = async () => {
   const kafkaClient = new PublishingKafkaClient([process.env.KAFKA_BROKERS!])
   await kafkaClient.start()
-  
-  const app = new Hono()
-  const TelemetryEventSchema = z.object({
-    deviceId: z.string().min(1),
-    ts: z.number().int().nonnegative(), // epoch ms
-    latitude: z.number().min(-90).max(90),
-    longitude: z.number().min(-180).max(180)
-  });
+  kafkaReady = true
+
+  app.get('/health', (c) => {
+    if (!kafkaReady) {
+      return c.json({ status: 'unhealthy', kafka: 'not connected' }, 503)
+    }
+    return c.json({ status: 'healthy', kafka: 'connected' })
+  })
 
   app.post('/event', async (c) => {
     const payload = await c.req.json();
@@ -23,7 +32,6 @@ const main = async () => {
     }
 
     const { deviceId, ts, latitude, longitude } = result.data;
-
     await kafkaClient.publish(
       process.env.KAFKA_TOPIC!, 
       [{ 
@@ -33,7 +41,8 @@ const main = async () => {
     );
     return c.json({ deviceId, ts, latitude, longitude });
   })
-
 }
 
 main().catch((err) => console.error(err))
+
+export default app

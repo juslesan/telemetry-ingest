@@ -1,7 +1,7 @@
 {
   "name": "stream-processor",
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot index.ts"
   },
   "dependencies": {
     "eventemitter3": "^5.0.0",
