@@ -20,7 +20,7 @@ services:
       - ingest-api
       - ingest-proxy
     environment:
-      - INGEST_URL=http://ingest-api:3000/event
+      - INGEST_URL=http://ingest-proxy:4000/event
     volumes:
       - ./load-generator:/app/load-generator
       - load-node-modules:/app/load-generator/node_modules
@@ -51,7 +51,7 @@ services:
     environment:
       - KAFKA_BROKERS=redpanda:9092
       - KAFKA_TOPIC=telemetry-events
-      - INGEST_URL=http://ingest-api:3000/event
+      - INGEST_URL=http://ingest-api:3000/events/batch
     volumes:
       - ./stream-processor:/app/stream-processor
       - stream-processor-node-modules:/app/stream-processor/node_modules

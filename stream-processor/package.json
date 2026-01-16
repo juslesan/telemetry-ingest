@@ -4,6 +4,8 @@
     "dev": "bun run --hot src/index.ts"
   },
   "dependencies": {
+    "eventemitter3": "^5.0.0",
+    "kafkajs": "^2.2.4",
     "zod": "^3.24.1"
   },
   "devDependencies": {
