@@ -1,5 +1,6 @@
 import { Consumer, Kafka } from "kafkajs"
 import { EventEmitter } from "eventemitter3"
+import { BloomFilter } from "bloom-filters"
 
 export interface TelemetryEvent {
     deviceId: string
@@ -21,6 +22,7 @@ export class SubscribingKafkaClient extends EventEmitter<Events> {
 
     private kafkaClient: Kafka
     private consumer: Consumer
+    private bloomFilter: BloomFilter
 
     constructor(brokers: string[]) {
         super()
@@ -29,6 +31,7 @@ export class SubscribingKafkaClient extends EventEmitter<Events> {
             brokers,
         })
         this.consumer = this.kafkaClient.consumer({ groupId: 'stream-processor' })
+        this.bloomFilter = BloomFilter.create(1000000, 0.000001)
     }
 
     async start() {
@@ -38,14 +41,19 @@ export class SubscribingKafkaClient extends EventEmitter<Events> {
 
     async subscribe(topic: string) {
         console.log("Subscribing to topic", topic)
+        const startTimestamp = Date.now()
         await this.consumer.subscribe({ topic, fromBeginning: true })
         await this.consumer.run({
             eachMessage: async ({ message }) => {
                 const jsonString = binaryToUtf8(message.value!)
-                const telemetryEvent = JSON.parse(jsonString) as TelemetryEvent
-                this.emit('message', telemetryEvent)
+                // Handle duplicate events here with the JSON string
+                if (!this.bloomFilter.has(jsonString)) {
+                    this.bloomFilter.add(jsonString)
+                    const telemetryEvent = JSON.parse(jsonString) as TelemetryEvent
+                    this.emit('message', telemetryEvent)
+                }
             }
         })
-        console.log("Subscribed to topic", topic)
+        console.log("Subscribed to topic", topic, "in", Date.now() - startTimestamp, "ms")
     }
 }
