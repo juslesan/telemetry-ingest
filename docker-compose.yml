@@ -1,0 +1,94 @@
+services:
+  ingest-api:
+    image: oven/bun:latest
+    working_dir: /app/ingest-api
+    command: sh -c "bun install && bun run dev"
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./ingest-api:/app/ingest-api
+      - ingest-node-modules:/app/ingest-api/node_modules
+      - ingest-data:/app/ingest-api/data
+
+  load-generator:
+    image: oven/bun:latest
+    working_dir: /app/load-generator
+    command: sh -c "bun install && bun run src/index.ts"
+    depends_on:
+      - ingest-api
+      - ingest-proxy
+    environment:
+      - INGEST_URL=http://ingest-api:3000/event
+    volumes:
+      - ./load-generator:/app/load-generator
+      - load-node-modules:/app/load-generator/node_modules
+
+  ingest-proxy:
+    image: oven/bun:latest
+    working_dir: /app/ingest-proxy
+    command: sh -c "bun install && bun run dev"
+    ports:
+      - "4000:4000"
+    depends_on:
+      - redpanda
+    environment:
+      - PORT=4000
+      - KAFKA_BROKERS=redpanda:9092
+      - KAFKA_TOPIC=telemetry-events
+    volumes:
+      - ./ingest-proxy:/app/ingest-proxy
+      - ingest-proxy-node-modules:/app/ingest-proxy/node_modules
+
+  stream-processor:
+    image: oven/bun:latest
+    working_dir: /app/stream-processor
+    command: sh -c "bun install && bun run index.ts"
+    depends_on:
+      - redpanda
+      - ingest-api
+    environment:
+      - KAFKA_BROKERS=redpanda:9092
+      - KAFKA_TOPIC=telemetry-events
+      - INGEST_URL=http://ingest-api:3000/event
+    volumes:
+      - ./stream-processor:/app/stream-processor
+      - stream-processor-node-modules:/app/stream-processor/node_modules
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - "1G"
+      - --reserve-memory
+      - "0M"
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr
+      - internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr
+      - internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr
+      - internal://redpanda:8082,external://localhost:18082
+    ports:
+      - "19092:19092"
+      - "18082:18082"
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+
+volumes:
+  ingest-node-modules:
+  ingest-proxy-node-modules:
+  load-node-modules:
+  stream-processor-node-modules:
+  ingest-data:
+  redpanda-data:
