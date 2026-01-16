@@ -100,6 +100,7 @@ const sendBurst = async (burstIndex: number) => {
 const run = async () => {
   console.log('Starting load generator with config:', config)
 
+  await sleep(30000) // added delay to allow redpanda to be ready
   for (let i = 0; i < config.bursts; i += 1) {
     await sendBurst(i)
     if (i < config.bursts - 1) {
