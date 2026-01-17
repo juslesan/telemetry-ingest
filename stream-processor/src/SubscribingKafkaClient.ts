@@ -42,7 +42,7 @@ export class SubscribingKafkaClient extends EventEmitter<Events> {
     async subscribe(topic: string) {
         console.log("Subscribing to topic", topic)
         const startTimestamp = Date.now()
-        await this.consumer.subscribe({ topic, fromBeginning: true })
+        await this.consumer.subscribe({ topic })
         await this.consumer.run({
             eachMessage: async ({ message }) => {
                 const jsonString = binaryToUtf8(message.value!)
