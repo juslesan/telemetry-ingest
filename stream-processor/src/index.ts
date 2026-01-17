@@ -1,5 +1,5 @@
 import { Message } from "kafkajs";
-import { SubscribingKafkaClient, TelemetryEvent } from "./src/SubscribingKafkaClient";
+import { SubscribingKafkaClient, TelemetryEvent } from "./SubscribingKafkaClient";
 
 const KAFKA_BROKERS = process.env.KAFKA_BROKERS || 'redpanda:9092';
 const KAFKA_TOPIC = process.env.KAFKA_TOPIC || 'telemetry-events';

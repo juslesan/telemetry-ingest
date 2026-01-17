@@ -1,9 +1,10 @@
 {
   "name": "stream-processor",
   "scripts": {
-    "dev": "bun run --hot index.ts"
+    "dev": "bun run --hot src/index.ts"
   },
   "dependencies": {
+    "heap-js": "^2.5.0",
     "bloom-filters": "^3.0.4",
     "eventemitter3": "^5.0.0",
     "kafkajs": "^2.2.4",

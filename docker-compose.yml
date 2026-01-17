@@ -53,7 +53,7 @@ services:
   stream-processor:
     image: oven/bun:latest
     working_dir: /app/stream-processor
-    command: sh -c "bun install && bun run index.ts"
+    command: sh -c "bun install && bun run src/index.ts"
     depends_on:
       redpanda:
         condition: service_healthy
