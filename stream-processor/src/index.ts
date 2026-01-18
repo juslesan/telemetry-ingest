@@ -5,7 +5,10 @@ const KAFKA_BROKERS = process.env.KAFKA_BROKERS || 'redpanda:9092';
 const KAFKA_TOPIC = process.env.KAFKA_TOPIC || 'telemetry-events';
 const INGEST_URL = process.env.INGEST_URL || 'http://ingest-api:3000/events/batch';
 
-const BATCHING_INTERVAL_MS = 1000;
+const BATCHING_INTERVAL = Number(process.env.BATCHING_INTERVAL ?? 1000);
+const MAX_BATCH_SIZE = Number(process.env.MAX_BATCH_SIZE ?? 100);
+
+console.log('Starting stream processor with batching interval:', BATCHING_INTERVAL, 'ms and max batch size:', MAX_BATCH_SIZE)
 
 let batch: TelemetryEvent[] = []
 let batchingIntervalRef: NodeJS.Timeout
@@ -26,16 +29,15 @@ const sendBatch = () => {
 const startBatchingInterval = () => {
     batchingIntervalRef = setInterval(() => {
         sendBatch()
-    }, BATCHING_INTERVAL_MS)
+    }, BATCHING_INTERVAL)
 }
 
-// IMPLEMENTATION
 const main = async () => {
     const kafkaClient = new SubscribingKafkaClient([KAFKA_BROKERS])
     await kafkaClient.start()
     kafkaClient.on('message', (message: TelemetryEvent) => {
         batch.push(message)
-        if (batch.length >= 250) {
+        if (batch.length >= MAX_BATCH_SIZE) {
             clearInterval(batchingIntervalRef)
             sendBatch()
             startBatchingInterval()

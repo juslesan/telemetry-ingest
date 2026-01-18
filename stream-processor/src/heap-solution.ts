@@ -5,8 +5,8 @@ const KAFKA_BROKERS = process.env.KAFKA_BROKERS || 'redpanda:9092';
 const KAFKA_TOPIC = process.env.KAFKA_TOPIC || 'telemetry-events';
 const INGEST_URL = process.env.INGEST_URL || 'http://ingest-api:3000/events/batch';
 
-const EMIT_DELAY_MS = Number(process.env.EMIT_DELAY_MS ?? 6000);
-const EMIT_INTERVAL_MS = Number(process.env.EMIT_INTERVAL_MS ?? 1000);
+const EMIT_DELAY = Number(process.env.EMIT_DELAY ?? 6000);
+const EMIT_INTERVAL = Number(process.env.EMIT_INTERVAL ?? 1000);
 const MAX_BATCH_SIZE = Number(process.env.MAX_BATCH_SIZE ?? 500);
 
 
@@ -19,7 +19,7 @@ const heap = new Heap<TelemetryEvent>((a: TelemetryEvent, b: TelemetryEvent) => 
 let emitIntervalRef: NodeJS.Timeout;
 
 const emitReadyEvents = async () => {
-    const watermark = Date.now() - EMIT_DELAY_MS;
+    const watermark = Date.now() - EMIT_DELAY;
     const batch: TelemetryEvent[] = [];
 
     // Pop all events with timestamp <= watermark (they're ready to emit)
@@ -31,11 +31,9 @@ const emitReadyEvents = async () => {
             break;
         }
     }
-
     if (batch.length === 0) {
         return;
     }
-
     console.log(`Emitting ${batch.length} events (heap size: ${heap.length}, watermark: ${new Date(watermark).toISOString()})`);
     await fetch(INGEST_URL, {
         method: 'POST',
@@ -45,11 +43,11 @@ const emitReadyEvents = async () => {
 };
 
 const startEmitInterval = () => {
-    emitIntervalRef = setInterval(emitReadyEvents, EMIT_INTERVAL_MS);
+    emitIntervalRef = setInterval(emitReadyEvents, EMIT_INTERVAL);
 };
 
 const main = async () => {
-    console.log(`Starting stream processor with watermark delay: ${EMIT_DELAY_MS}ms`);
+    console.log(`Starting stream processor with watermark delay: ${EMIT_DELAY}ms`);
     
     const kafkaClient = new SubscribingKafkaClient([KAFKA_BROKERS]);
     await kafkaClient.start();
