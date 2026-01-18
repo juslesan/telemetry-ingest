@@ -7,7 +7,7 @@ const INGEST_URL = process.env.INGEST_URL || 'http://ingest-api:3000/events/batc
 
 const EMIT_DELAY = Number(process.env.EMIT_DELAY ?? 6000);
 const EMIT_INTERVAL = Number(process.env.EMIT_INTERVAL ?? 1000);
-const MAX_BATCH_SIZE = Number(process.env.MAX_BATCH_SIZE ?? 500);
+const MAX_BATCH_SIZE = Number(process.env.MAX_BATCH_SIZE ?? 1000);
 
 
 // This solution only really works if we know the max out-of-order time.

@@ -24,7 +24,7 @@ services:
     environment:
       - INGEST_URL=http://ingest-proxy:4000/event
       - DEVICES=10
-      - BURSTS=10
+      - BURSTS=100
       - BURST_SIZE=1000
       - BURST_INTERVAL_MS=500
       - DUPLICATE_RATE=0.05
@@ -60,7 +60,7 @@ services:
   stream-processor:
     image: oven/bun:latest
     working_dir: /app/stream-processor
-    command: sh -c "bun install && bun run src/index.ts"
+    command: sh -c "bun install && bun run src/heap-solution.ts"
     depends_on:
       redpanda:
         condition: service_healthy
