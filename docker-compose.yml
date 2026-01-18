@@ -23,6 +23,13 @@ services:
         condition: service_healthy
     environment:
       - INGEST_URL=http://ingest-proxy:4000/event
+      - DEVICES=10
+      - BURSTS=10
+      - BURST_SIZE=1000
+      - BURST_INTERVAL_MS=500
+      - DUPLICATE_RATE=0.05
+      - OUT_OF_ORDER_RATE=0.1
+      - MAX_OUT_OF_ORDER_MS=5000
     volumes:
       - ./load-generator:/app/load-generator
       - load-node-modules:/app/load-generator/node_modules
@@ -63,6 +70,8 @@ services:
       - KAFKA_BROKERS=redpanda:9092
       - KAFKA_TOPIC=telemetry-events
       - INGEST_URL=http://ingest-api:3000/events/batch
+      - BATCHING_INTERVAL=2500
+      - MAX_BATCH_SIZE=1000
     volumes:
       - ./stream-processor:/app/stream-processor
       - stream-processor-node-modules:/app/stream-processor/node_modules
