@@ -105,9 +105,9 @@ services:
     volumes:
       - redpanda-data:/var/lib/redpanda/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/brokers"]
-      interval: 30s
-      timeout: 5s
+      test: ["CMD-SHELL", "sleep 45 && curl -f http://localhost:8082/brokers"]
+      interval: 5s
+      timeout: 65s
       retries: 15
       start_period: 60s
 
