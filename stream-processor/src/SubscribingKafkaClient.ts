@@ -39,6 +39,20 @@ export class SubscribingKafkaClient extends EventEmitter<Events> {
         console.log('Kafka consumer connected')
     }
 
+    // methods to pause and resume consumption of a topic
+    // can be used for back pressure if necessary
+    pause(topic: string) {
+        if (this.consumer.paused().length === 0) {
+            this.consumer.pause([{ topic }])
+        }
+    }
+
+    resume(topic: string) {
+        if (this.consumer.paused().length > 0) {
+            this.consumer.resume([{ topic }])
+        }
+    }
+
     async subscribe(topic: string) {
         console.log("Subscribing to topic", topic)
         const startTimestamp = Date.now()
